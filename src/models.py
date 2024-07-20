@@ -10,9 +10,7 @@ class User(db.Model):
     is_active = db.Column(db.Boolean(), unique=False, nullable=False, default=True)
 
     #Relationships 
-
-    followers = db.relationship("Followers", backref="user_followers") 
-    favorites = db.relationship("Followers", backref="user_favorites")
+    favorites = db.relationship("Favorites", backref="favorites", lazy=True)
 
     def __repr__(self):
         return f"<User {self.name}>"
@@ -29,24 +27,29 @@ class Favorites(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
 
     #Relationships
-    charcaters = db.relationship("Favorites", backref="charcaters")
-    planets = db.relationship("Favorites", backref="planets")
-    vehicles = db.relationship("Favorites", backref="vehicles")
+    people = db.relationship("People", backref="people", lazy=True)
+    planets = db.relationship("Planets", backref="planets", lazy=True)
+    vehicles = db.relationship("Vehicles", backref="vehicles", lazy=True)
     
 
-class Followers(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_from_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-    user_to_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-
-
-class Characters(db.Model):
+class People(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False) 
     height = db.Column(db.Integer, nullable=False)
     mass = db.Column(db.Integer, nullable=False)
 
     favorite_id = db.Column(db.Integer, db.ForeignKey("favorites.id"))
+
+    def __repr__(self):
+        return f"<Person: {self.name}>"
+    
+    def serialize(self):
+        return{
+            "id": self.id,
+            "name": self.name,
+            "height": self.height,
+            "mass": self.mass
+        }
 
 
 class Planets(db.Model):
@@ -55,7 +58,18 @@ class Planets(db.Model):
     orbital_period = db.Column(db.Integer, nullable=False)
     population = db.Column(db.Integer, nullable=False)
 
-    favorite_id = db.Column(db.Integer, db.ForeingKey("favorites.id"))
+    favorite_id = db.Column(db.Integer, db.ForeignKey("favorites.id"))
+
+    def __repr__(self):
+        return f"<Planet: {self.name}>"
+    
+    def serialze(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "orbital_period": self.orbital_period,
+            "population": self.population
+        }
 
 class Vehicles(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -64,3 +78,14 @@ class Vehicles(db.Model):
     max_speed = db.Column(db.Integer, nullable=False)
 
     favorite_id = db.Column(db.Integer, db.ForeignKey("favorites.id"))
+
+    def __repr__(self):
+        return f"<Vehicle: {self.name}"
+    
+    def serialize(self):
+        return{
+            "id": self.id,
+            "name": self.name,
+            "manufacturer": self.manufacturer,
+            "max_speed": self.max_speed
+        }
