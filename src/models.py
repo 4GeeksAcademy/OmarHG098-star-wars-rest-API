@@ -69,22 +69,3 @@ class Planets(db.Model):
             "orbital_period": self.orbital_period,
             "population": self.population
         }
-
-# class Vehicles(db.Model):
-#     id = db.Column(db.Integer, primary_key=True)
-#     name = db.Column(db.String(50), unique=True, nullable=False)
-#     manufacturer = db.Column(db.String(50), nullable=False)
-#     max_speed = db.Column(db.Integer, nullable=False)
-
-#     favorite_id = db.Column(db.Integer, db.ForeignKey("favorites.id"))
-
-#     def __repr__(self):
-#         return f"<Vehicle: {self.name}"
-    
-#     def serialize(self):
-#         return{
-#             "id": self.id,
-#             "name": self.name,
-#             "manufacturer": self.manufacturer,
-#             "max_speed": self.max_speed
-#         }
