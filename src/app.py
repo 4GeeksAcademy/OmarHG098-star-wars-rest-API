@@ -8,7 +8,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User, Favorites, People, Planets, Vehicles
+from models import db, User, Favorite, People, Planets
 #from models import Person
 
 app = Flask(__name__)
@@ -34,16 +34,40 @@ def handle_invalid_usage(error):
 # generate sitemap with all your endpoints
 @app.route('/')
 def sitemap():
-    return generate_sitemap(app)
+     return generate_sitemap(app)
 
-@app.route('/user', methods=['GET'])
-def handle_hello():
+# @app.route('/user', methods=['GET'])
+# def handle_hello():
 
-    response_body = {
-        "msg": "Hello, this is your GET /user response "
-    }
+#     response_body = {
+#         "msg": "Hello, this is your GET /user response "
+#     }
 
-    return jsonify(response_body), 200
+#     return jsonify(response_body), 200
+
+@app.route('/people', methods=['GET'])
+def get_all_people():
+    people = People.query.all()
+    serialized_people = [person.serialize() for person in people]
+    return jsonify({"people": serialized_people}), 200
+
+#[GET] /people/<int:people_id>
+
+
+@app.route('/planets', methods=['GET'])
+def get_all_planets():
+    planets = Planets.query.all()
+    serialized_planets = [planet.serialize() for planet in planets]
+    return jsonify({"planets": serialized_planets}), 200
+
+#[GET] /planets/<int:planet_id>
+
+@app.route('/users', methods=['GET'])
+def get_all_users():
+    users = User.query.all()
+    serialized_users = [user.serialize() for user in users]
+    return jsonify({"users": serialized_users}), 200
+
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
