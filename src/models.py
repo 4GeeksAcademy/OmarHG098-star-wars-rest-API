@@ -10,7 +10,8 @@ class User(db.Model):
     is_active = db.Column(db.Boolean, unique=False, nullable=False, default=True)
 
     #Relationships 
-    favorites = db.relationship("Favorite", backref="favorite", lazy=True)
+    favorite_people = db.relationship("Favorite_People", backref="user_favorite_people", lazy=True)
+    favorite_planet = db.relationship("Favorite_Planet", backref="user_favorite_planet", lazy=True)
 
     def __repr__(self):
         return f"<Users {self.name}>"
@@ -22,12 +23,15 @@ class User(db.Model):
             "email": self.email,
         }
     
-class Favorite(db.Model):
+class Favorite_People(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-    people = db.Column(db.Integer, db.ForeignKey("people.id"))
-    planets = db.Column(db.Integer, db.ForeignKey("planets.id"))
-    # vehicles = db.relationship("Vehicles", backref="vehicles", lazy=True)
+    people_id = db.Column(db.Integer, db.ForeignKey("people.id"))
+
+class Favorite_Planet(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    planet_id = db.Column(db.Integer, db.ForeignKey("planets.id"))
     
 
 class People(db.Model):
@@ -37,7 +41,7 @@ class People(db.Model):
     mass = db.Column(db.Integer, nullable=False)
 
     #relationship
-    people = db.relationship("Favorite", backref="favorite_planet", lazy=True)
+    favorite_people = db.relationship("Favorite_People", backref="favorite_people", lazy=True)
 
     def __repr__(self):
         return "<People %r>" % self.name 
@@ -57,12 +61,12 @@ class Planets(db.Model):
     orbital_period = db.Column(db.Integer, nullable=False)
     population = db.Column(db.Integer, nullable=False)
 
-    favorite = db.relationship("Favorite", backref="favorites_planets", lazy=True)
+    favorite_planet = db.relationship("Favorite_Planet", backref="favorite_planet", lazy=True)
 
     def __repr__(self):
         return f"<Planet: {self.name}>"
     
-    def serialze(self):
+    def serialize(self):
         return {
             "id": self.id,
             "name": self.name,
