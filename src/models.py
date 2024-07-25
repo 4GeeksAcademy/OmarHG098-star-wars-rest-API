@@ -14,7 +14,7 @@ class User(db.Model):
     favorite_planet = db.relationship("Favorite_Planet", backref="user_favorite_planet", lazy=True)
 
     def __repr__(self):
-        return f"<Users {self.name}>"
+        return f"<Users {self.username}>"
 
     def serialize(self):
         return {
@@ -28,11 +28,30 @@ class Favorite_People(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     people_id = db.Column(db.Integer, db.ForeignKey("people.id"))
 
+    def __repr__(self):
+        return f"<Person: {self.id}>"
+    
+    def serialize(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "people_id": self.people_id
+        }
+
 class Favorite_Planet(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     planet_id = db.Column(db.Integer, db.ForeignKey("planets.id"))
     
+    def __repr__(self):
+        return f"<Planet: {self.id}>"
+    
+    def serialize(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "planet_id": self.planet_id
+        }
 
 class People(db.Model):
     id = db.Column(db.Integer, primary_key=True)

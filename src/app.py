@@ -42,35 +42,132 @@ def get_all_users():
     serialized_users = [user.serialize() for user in users]
     return jsonify({"users": serialized_users}), 200
 
+@app.route('/users', methods=['POST'])
+def create_user():
+    body = request.json
+    username = body.get("username", None)
+    email = body.get("email", None)
+    password = body.get("password", None)
+    
+    if username is None or email is None or password is None:
+        return jsonify({"error": "Missing values!"}), 400
+    
+    email_exists = User.query.filter_by(email=email).first()
+    if email_exists is not None:
+        return jsonify({"error": "Email already in use!"}), 400
+    
+    user = User(username=username, email=email, password=password)
+    try:
+        db.session.add(user)
+        db.session.commit()
+        db.session.refresh(user)
+        return jsonify({"message": f"{user.username} created!"}), 201
+    
+    except Exception as error:
+        db.session.rollback()
+        return jsonify({"error": f"{error}"}), 500
+
+
 @app.route('/users/favorites', methods=['GET'])
 def get_user_favorites():
-    favorites = Favorite.query.all()
-    serialized_favorite = [favorite.serialize() for favorite in favorites]
-    return jsonify({"favorites": serialized_favorite}), 200
+    favorite_people = Favorite_People.query.all()
+    favorite_planets = Favorite_Planet.query.all()
+    serialized_people = [favorite_person.serialize() for favorite_person in favorite_people]
+    serialized_planet = [favorite_planet.serialize() for favorite_planet in favorite_planets]
+    return jsonify({"favorites": f"{serialized_people}" f"{serialized_planet}"}), 200
 
 @app.route('/favorite/people', methods=['POST'])
 def add_person_to_favorites():
     body = request.json
     user_id = body.get("user_id", None)
     people_id = body.get("people_id", None)
-    person = People.query.get(people_id)
-
-    if not person:
+    
+    person_exists = People.query.filter_by(id=people_id)
+    if not person_exists:
         return jsonify({"error": "Person not found!"}), 404
+    
+    user_exists = User.query.filter_by(id=user_id)
+    if not user_exists:
+        return jsonify({"error": "User not found!"}), 404
     
     if user_id is None or people_id is None:
         return jsonify({"error": "Missing values!"}), 400
+    
+    favorite = Favorite_People.query.filter_by(user_id=user_id, id=people_id).first()
+    if favorite:
+        return jsonify({"message": "Person is already a favorite"}), 400
 
-    new_favorite = Favorite_People(user_id, people_id)
+    new_favorite = Favorite_People(user_id=user_id, people_id=people_id)
     try:
         db.session.add(new_favorite)
-        db.session.commit
-        return jsonify({"message": "Person added to favorites"}), 200
+        db.session.commit()
+        db.session.refresh(new_favorite)
+        return jsonify({"message": "Person added to favorites"}), 201
         
     except Exception as error:
         db.session.rollback()
         return jsonify({"error": f"{error}"}), 500
 
+@app.route('/users/<int:user_id>/favorite/people/<int:people_id>', methods=['DELETE'])
+def remove_person_from_favorites(user_id, people_id):
+    
+    favorite = Favorite_People.query.filter_by(user_id=user_id, people_id=people_id).first()
+    try:
+        if not favorite:
+            return jsonify({"error": "Person not in favorites"}), 404
+        db.session.delete(favorite)
+        db.session.commit()
+        return jsonify({"message": "Person deleted from favorites!"}), 201
+        
+    except Exception as error:
+        return jsonify({"error": f"{error}"}), 500
+
+
+@app.route('/favorite/planets', methods=['POST'])
+def add_planet_to_favorites():
+    body = request.json
+    user_id = body.get("user_id", None)
+    planet_id = body.get("planet_id", None)
+
+    planet_exists = Planets.query.filter_by(id=planet_id)
+    if not planet_exists:
+        return jsonify({"error": "Planet not found!"}), 404
+
+    user_exists = User.query.filter_by(id=user_id)
+    if not user_exists:
+        return jsonify({"error": "User not found!"}), 404
+
+    if user_id is None or planet_id is None:
+        return jsonify({"error": "Missing values!"}), 400
+    
+    favorite = Favorite_Planet.query.filter_by(user_id=user_id, id=planet_id).first()
+    if favorite:
+        return jsonify({"message": "Planet is already a favorite"}), 400
+    
+    new_favorite = Favorite_Planet(user_id=user_id, planet_id=planet_id)
+    try:
+        db.session.add(new_favorite)
+        db.session.commit()
+        db.session.refresh(new_favorite)
+        return jsonify({"message": "Planet added to favorites"}), 200
+
+    except Exception as error:
+        db.session.rollback()
+        return jsonify({"error": f"{error}"}), 500
+
+@app.route('/users/<int:user_id>/favorite/planets/<int:planet_id>', methods=['DELETE'])
+def remove_planet_from_favorites(user_id, planet_id):
+    
+    favorite = Favorite_Planet.query.filter_by(user_id=user_id, planet_id=planet_id).first()
+    try:
+        if not favorite:
+            return jsonify({"error": "Planet not in favorites"}), 404
+        db.session.delete(favorite)
+        db.session.commit()
+        return jsonify({"message": "Planet deleted from favorites!"}), 200
+        
+    except Exception as error:
+        return jsonify({"error": f"{error}"}), 500
 
 @app.route('/people', methods=['GET'])
 def get_all_people():
@@ -101,6 +198,7 @@ def add_person():
         return jsonify({"message": f"{person.name} created!"}), 201
         
     except Exception as error:
+        db.session.rollback()
         return jsonify({"error": f"{error}"}), 500
 
 @app.route('/people/<int:id>', methods=['GET'])
@@ -108,7 +206,7 @@ def get_single_person(id):
     try:
         person = People.query.get(id)
         if person is None:
-            return jsonify({"Character not found!"}), 404
+            return jsonify({"Person not found!"}), 404
         return jsonify({"person": person.serialize()}), 200
      
     except Exception as error:
@@ -144,6 +242,7 @@ def add_planet():
         return jsonify({"message": f"{planet.name} created!"}), 201
         
     except Exception as error:
+        db.session.rollback()
         return jsonify({"error": f"{error}"}), 500
 
 
